@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather Dashboard</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 25px;
+            font-size: 36px;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            margin-top: 35px;
+            font-weight: 500;
+        }
+
+        button {
+            background: white;
+            color: #0077ff;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #0077ff;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .city-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px;
+        }
+
+        .card {
+            backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            width: 230px;
+            border-radius: 18px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+
+        .temp {
+            font-size: 34px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .time {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .aqi-good { color: #00e676; }
+        .aqi-moderate { color: #ffeb3b; }
+        .aqi-bad { color: #ff5252; }
+
+        .loading {
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        footer {
+            margin-top: 30px;
+            padding-bottom: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>🌤 Weather Dashboard</h1>
+
+<button onclick="getLocation()">📍 Use My Location</button>
+
+<div class="city-container">
+    <div class="card loading" id="live-weather">Fetching your weather...</div>
+</div>
+
+<!-- NAOKOTHI -->
+<h2>Naokothi</h2>
+<div class="city-container">
+    <div class="card loading" id="naokothi-weather"></div>
+    <div class="card loading" id="naokothi-sunrise"></div>
+    <div class="card loading" id="naokothi-sunset"></div>
+</div>
+
+<!-- NORTH CAROLINA -->
+<h2>North Carolina</h2>
+<div class="city-container">
+    <div class="card loading" id="northcarolina-weather"></div>
+    <div class="card loading" id="northcarolina-sunrise"></div>
+    <div class="card loading" id="northcarolina-sunset"></div>
+</div>
+
+<footer>
+    Built with ❤️ using Flask & Open-Meteo APIs
+</footer>
+
+<script>
+function getAQIClass(aqi){
+    if(aqi <= 50) return "aqi-good";
+    if(aqi <= 100) return "aqi-moderate";
+    return "aqi-bad";
+}
+
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition);
+    } else {
+        alert("Geolocation not supported");
+    }
+}
+
+async function showPosition(position) {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    const response = await fetch(`/live-weather?lat=${lat}&lon=${lon}`);
+    const data = await response.json();
+
+    const aqiClass = getAQIClass(data.air_quality);
+
+    document.getElementById("live-weather").classList.remove("loading");
+
+    document.getElementById("live-weather").innerHTML =
+        `<div class="temp">${data.temperature}°C</div>
+         📍 Your Location<br>
+         💧 Humidity: ${data.humidity}%<br>
+         🌧 Rain: ${data.rain} mm<br>
+         🌫 AQI: <span class="${aqiClass}">${data.air_quality}</span><br>
+         🌅 Sunrise: ${data.sunrise}<br>
+         🌇 Sunset: ${data.sunset}`;
+}
+
+async function loadWeather(city) {
+    const response = await fetch(`/weather/${city}`);
+    const data = await response.json();
+
+    const aqiClass = getAQIClass(data.air_quality);
+
+    document.getElementById(`${city}-weather`).classList.remove("loading");
+
+    document.getElementById(`${city}-weather`).innerHTML =
+        `<div class="temp">${data.temperature}°C</div>
+         💧 Humidity: ${data.humidity}%<br>
+         🌧 Rain: ${data.rain} mm<br>
+         🌫 AQI: <span class="${aqiClass}">${data.air_quality}</span>`;
+
+    document.getElementById(`${city}-sunrise`).classList.remove("loading");
+    document.getElementById(`${city}-sunrise`).innerHTML =
+        `🌅 Sunrise
+         <div class="time">${data.sunrise}</div>`;
+
+    document.getElementById(`${city}-sunset`).classList.remove("loading");
+    document.getElementById(`${city}-sunset`).innerHTML =
+        `🌇 Sunset
+         <div class="time">${data.sunset}</div>`;
+}
+
+loadWeather("naokothi");
+loadWeather("northcarolina");
+</script>
+
+</body>
+</html>
