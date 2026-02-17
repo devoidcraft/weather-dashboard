@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather App</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(to right, #74ebd5, #ACB6E5);
+            text-align: center;
+            padding-top: 40px;
+        }
+
+        h1 {
+            color: white;
+        }
+
+        h2 {
+            color: white;
+            margin-top: 30px;
+        }
+
+        .city-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            width: 220px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .temp {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .time {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🌤 Live Weather</h1>
+<button onclick="getLocation()">📍 Use My Location</button>
+
+<div class="city-container">
+    <div class="card" id="live-weather">
+        Your weather will appear here
+    </div>
+</div>
+
+
+<!-- NAOKOTHI -->
+<h2>Naokothi</h2>
+<div class="city-container">
+    <div class="card" id="naokothi-weather">Loading...</div>
+    <div class="card" id="naokothi-sunrise">Loading...</div>
+    <div class="card" id="naokothi-sunset">Loading...</div>
+</div>
+
+<!-- NORTH CAROLINA -->
+<h2>North Carolina</h2>
+<div class="city-container">
+    <div class="card" id="northcarolina-weather">Loading...</div>
+    <div class="card" id="northcarolina-sunrise">Loading...</div>
+    <div class="card" id="northcarolina-sunset">Loading...</div>
+</div>
+
+<script>
+
+function getLocation() {
+
+    if (navigator.geolocation) {
+
+        navigator.geolocation.getCurrentPosition(showPosition);
+
+    } else {
+        alert("Geolocation is not supported");
+    }
+}
+
+async function showPosition(position) {
+
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    // send GPS to Flask backend
+    const response = await fetch(`/live-weather?lat=${lat}&lon=${lon}`);
+    const data = await response.json();
+
+    document.getElementById("live-weather").innerHTML =
+        `<div class="temp">${data.temperature}°C</div>
+         📍 Your Location<br>
+         💧 Humidity: ${data.humidity}%<br>
+         🌧 Rain: ${data.rain} mm<br>
+         🌫 AQI: ${data.air_quality}<br>
+         🌅 Sunrise: ${data.sunrise}<br>
+         🌇 Sunset: ${data.sunset}`;
+}
+
+async function loadWeather(city) {
+    const response = await fetch(`/weather/${city}`);
+    const data = await response.json();
+
+    // WEATHER BOX
+    document.getElementById(`${city}-weather`).innerHTML =
+        `<div class="temp">${data.temperature}°C</div>
+         💧 Humidity: ${data.humidity}%<br>
+         🌧 Rain: ${data.rain} mm<br>
+         🌫 AQI: ${data.air_quality}`;
+
+    // SUNRISE BOX
+    document.getElementById(`${city}-sunrise`).innerHTML =
+        `🌅 Sunrise
+         <div class="time">${data.sunrise}</div>`;
+
+    // SUNSET BOX
+    document.getElementById(`${city}-sunset`).innerHTML =
+        `🌇 Sunset
+         <div class="time">${data.sunset}</div>`;
+}
+
+// load data for both cities
+loadWeather("naokothi");
+loadWeather("northcarolina");
+</script>
+
+</body>
+</html>
