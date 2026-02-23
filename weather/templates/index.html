@@ -1,138 +1,164 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Weather App</title>
-
+    <title>Weather Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
-            font-family: Arial;
-            background: linear-gradient(to right, #74ebd5, #ACB6E5);
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #121212; /* dark theme */
+            color: #e0e0e0;
             text-align: center;
-            padding-top: 40px;
         }
 
-        h1 {
-            color: white;
-        }
-
-        h2 {
-            color: white;
-            margin-top: 30px;
-        }
+        h1 { margin-top: 20px; font-size: 36px; }
 
         .city-container {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
             flex-wrap: wrap;
-            margin-bottom: 20px;
+            margin: 20px;
         }
 
         .card {
-            background: white;
+            background: #1e1e1e;
             padding: 20px;
             width: 220px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+        }
+
+        .title {
+            font-weight: bold;
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #ffffff;
         }
 
         .temp {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: bold;
+            margin-bottom: 5px;
+            color: #ff9800;
         }
 
-        .time {
-            font-size: 22px;
+        .next-hour {
+            font-size: 28px;
             font-weight: bold;
-            margin-top: 8px;
+            color: #4fc3f7;
+            margin-bottom: 10px;
+        }
+
+        .section {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        .button {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+
+        .button:hover {
+            background: #555;
+        }
+
+        @media (max-width: 600px) {
+            .card { width: 90%; }
         }
     </style>
 </head>
 <body>
 
-<h1>🌤 Live Weather</h1>
-<button onclick="getLocation()">📍 Use My Location</button>
+<h1>🌤 Weather Dashboard</h1>
+<button class="button" onclick="getLocation()">📍 Use My Location</button>
 
-<div class="city-container">
-    <div class="card" id="live-weather">
-        Your weather will appear here
-    </div>
-</div>
+<h2>Live Location</h2>
+<div class="city-container" id="live-location"></div>
 
-
-<!-- NAOKOTHI -->
-<h2>Naokothi</h2>
-<div class="city-container">
-    <div class="card" id="naokothi-weather">Loading...</div>
-    <div class="card" id="naokothi-sunrise">Loading...</div>
-    <div class="card" id="naokothi-sunset">Loading...</div>
-</div>
-
-<!-- NORTH CAROLINA -->
-<h2>North Carolina</h2>
-<div class="city-container">
-    <div class="card" id="northcarolina-weather">Loading...</div>
-    <div class="card" id="northcarolina-sunrise">Loading...</div>
-    <div class="card" id="northcarolina-sunset">Loading...</div>
-</div>
+<h2>Other Cities</h2>
+<div class="city-container" id="cities"></div>
 
 <script>
+const cities = ["naokothi", "northcarolina"];
 
-function getLocation() {
-
-    if (navigator.geolocation) {
-
-        navigator.geolocation.getCurrentPosition(showPosition);
-
-    } else {
-        alert("Geolocation is not supported");
-    }
+function getAQIClass(aqi){
+    if(aqi <= 50) return "Good";
+    if(aqi <= 100) return "Moderate";
+    return "Bad";
 }
 
-async function showPosition(position) {
-
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-
-    // send GPS to Flask backend
-    const response = await fetch(`/live-weather?lat=${lat}&lon=${lon}`);
-    const data = await response.json();
-
-    document.getElementById("live-weather").innerHTML =
-        `<div class="temp">${data.temperature}°C</div>
-         📍 Your Location<br>
-         💧 Humidity: ${data.humidity}%<br>
-         🌧 Rain: ${data.rain} mm<br>
-         🌫 AQI: ${data.air_quality}<br>
-         🌅 Sunrise: ${data.sunrise}<br>
-         🌇 Sunset: ${data.sunset}`;
-}
-
-async function loadWeather(city) {
+async function fetchCity(city){
     const response = await fetch(`/weather/${city}`);
     const data = await response.json();
 
-    // WEATHER BOX
-    document.getElementById(`${city}-weather`).innerHTML =
-        `<div class="temp">${data.temperature}°C</div>
-         💧 Humidity: ${data.humidity}%<br>
-         🌧 Rain: ${data.rain} mm<br>
-         🌫 AQI: ${data.air_quality}`;
-
-    // SUNRISE BOX
-    document.getElementById(`${city}-sunrise`).innerHTML =
-        `🌅 Sunrise
-         <div class="time">${data.sunrise}</div>`;
-
-    // SUNSET BOX
-    document.getElementById(`${city}-sunset`).innerHTML =
-        `🌇 Sunset
-         <div class="time">${data.sunset}</div>`;
+    return `
+    <div class="card">
+        <div class="title">${city}</div>
+        <div class="temp">🌡 Current: ${data.temperature}°C</div>
+        <div class="next-hour">⏱ Next Hour: ${data.next_hour_prediction}°C</div>
+        <div class="section">💧 Humidity: ${data.humidity}%</div>
+        <div class="section">🌧 Rain: ${data.rain} mm</div>
+        <div class="section">💨 Wind: ${data.wind_speed} km/h</div>
+        <div class="section">📊 Pressure: ${data.pressure} mb</div>
+        <div class="section">🌅 Sunrise: ${data.sunrise}</div>
+        <div class="section">🌇 Sunset: ${data.sunset}</div>
+    </div>
+    `;
 }
 
-// load data for both cities
-loadWeather("naokothi");
-loadWeather("northcarolina");
+async function fetchLive(lat, lon){
+    const response = await fetch(`/live-weather?lat=${lat}&lon=${lon}`);
+    const data = await response.json();
+
+    document.getElementById("live-location").innerHTML = `
+    <div class="card">
+        <div class="title">Your Location</div>
+        <div class="temp">🌡 Current: ${data.temperature}°C</div>
+        <div class="next-hour">⏱ Next Hour: ${data.next_hour_prediction}°C</div>
+        <div class="section">💧 Humidity: ${data.humidity}%</div>
+        <div class="section">🌧 Rain: ${data.rain} mm</div>
+        <div class="section">💨 Wind: ${data.wind_speed} km/h</div>
+        <div class="section">📊 Pressure: ${data.pressure} mb</div>
+        <div class="section">🌅 Sunrise: ${data.sunrise}</div>
+        <div class="section">🌇 Sunset: ${data.sunset}</div>
+    </div>
+    `;
+}
+
+function getLocation(){
+    if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+            fetchLive(pos.coords.latitude, pos.coords.longitude);
+        });
+    } else {
+        alert("Geolocation not supported");
+    }
+}
+
+async function loadCities(){
+    let html = "";
+    for(let city of cities){
+        html += await fetchCity(city);
+    }
+    document.getElementById("cities").innerHTML = html;
+}
+
+loadCities();
 </script>
 
 </body>
